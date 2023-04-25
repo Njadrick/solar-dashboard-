@@ -1,0 +1,58 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+- master
+
+jobs:
+- job: 'Test'
+  pool:
+    vmImage: 'Ubuntu-latest'
+  strategy:
+    matrix:
+      Python37:
+        python.version: '3.7'
+
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+      displayName: 'Use Python $(python.version)'
+
+    - script: |
+        git clone https://github.com/SolarArbiter/solarforecastarbiter-api.git test_api/solarforecastarbiter-api
+      displayName: 'Clone API'
+
+    - task: DockerCompose@0
+      displayName: 'Start test api'
+      inputs:
+        action: Run services
+        dockerComposeFile: test_api/docker-compose.yml
+        buildImages: true
+        abortOnContainerExit: false
+        detached: true
+  
+    - script: |
+        echo "##vso[task.setvariable variable=mysql.host]127.0.0.1"
+        echo "##vso[task.setvariable variable=mysql.port]$(docker port solararbitersolarforecastarbiter-dashboard_mysql_1 | rev | cut -d':' -f 1 | rev)"
+      displayName: 'Set env variables'
+
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+      displayName: 'Install dependencies'
+
+    - script: pip install .
+      displayName: 'Install sfa_dash'
+    
+    - script: docker wait solararbitersolarforecastarbiter-dashboard_migrate_schemas_1
+      displayName: 'Wait for MySQL'
+
+    - script: cd / && pytest --pyargs sfa_dash
+      displayName: 'pytest'
+
+    - script: flake8 $(Pipeline.Workspace)/sfa_dash
+      displayName: 'flake8'

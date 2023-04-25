@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" class="h-100">
+  <head>
+    {% include "head.html" %}
+    {% block extra_scripts %}{% endblock %}
+  </head>
+  <body class="d-flex flex-column h-100">
+    <header class="fixed-top">
+      {% include "navbar.html" %}
+      
+    </header>
+    <main role="main" class="flex-shrink-0">
+      <div class="container">
+        <!-- Content Block -->
+        <div class="row">
+          <div class="content col-md-12">
+            {% block dash %}
+            {% endblock %}
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer bg-light mt-auto">
+      <div class="container">
+  	  	{% include "footer.html" %}
+      </div>
+    </footer>
+  </body>
+  <script>
+    if (window.navigator.userAgent.match(/MSIE|Trident/) !== null) {
+      var main = document.getElementsByTagName("main")[0];
+      var firstContainer = main.getElementsByClassName("container")[0];
+      var ieBanner = document.createElement("div");
+      ieBanner.className = "iebanner alert-warning";
+      ieBanner.innerText = 'Internet Explorer detected, some features may not \
+                            work. We recommend using Firefox, Chrome or Edge.'
+      main.insertBefore(ieBanner, firstContainer);
+    }
+  </script>
+</html>

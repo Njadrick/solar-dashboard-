@@ -1,0 +1,7 @@
+{% extends "data/metadata/forecast_metadata.html" %}
+{% set data_type = 'Probabilistic Forecast Value' %}
+{% block cdf_fields %}
+{{ macro.li('Axis', axis) }}
+{# constant_value will need units dependent on axis, and variable #}
+{{ macro.li('Constant Value', constant_value |string ) }}
+{% endblock %}

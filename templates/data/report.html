@@ -1,0 +1,15 @@
+{% extends "dash/data.html" %}
+{% block extra_scripts %}
+<script src="https://cdn.plot.ly/plotly-1.52.3.min.js"></script>
+<script src="/static/js/report-rendering.js"></script>
+{% endblock %}
+{% block content %}
+<div id="report-block">
+{% include "data/intermediate_report.html" %}
+</div>
+<script>
+    var metric_categories = JSON.parse('{{ metric_categories | tojson }}');
+    var deterministic_metrics = JSON.parse('{{ deterministic_metrics | tojson }}');
+    var all_metrics = JSON.parse('{{ all_metrics | tojson }}');
+</script>
+{% endblock %}

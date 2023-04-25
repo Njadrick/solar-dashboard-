@@ -1,0 +1,50 @@
+{% extends "dash/data.html" %}
+{% import "data/metadata/report_macro.jinja" as meta_macro %}
+{% block content %}
+<div class="tools {{ table_type }}-tools mt-1">
+  <input type="text" placeholder="Search" class="search">
+  {% if can_create('reports') %}
+  <a role="button" class="btn btn-primary btn-sm" href="{{ url_for('forms.create_deterministic_report')}}">Create new Report</a>
+  {% endif %}
+</div>
+<table class="reports-table table results">
+  <thead>
+    <tr>
+	  <th scope="col">Name</th>
+      <th scope="col"></th>
+      <th scope="col"></th>
+      <th scope="col" id="provider-header" class="filterable-header">Provider</th>
+      <th scope="col" id="status-header" class="filterable-header">Status</th>
+	</tr>
+  </thead>
+  <tbody>
+    <tr class="warning no-result">
+      <td colspan="4"><i class="fa fa-warning"></i>No result</td>
+    </tr>
+  {% for report in reports %}
+    <tr class="reports-table-row">
+        <td class="reports-table-name-column">
+          <a href="{{ url_for('data_dashboard.report_view', uuid=report['report_id']) }}">{{ report['report_parameters']['name'] }}</a>
+        </td>
+        <td>
+            <button class="report-details-expander btn btn-sm btn-primary">Metadata</button>
+            {# start report details block #}
+            <div class="report-metadata-popup" hidden>
+            {{ meta_macro.report_metadata(report, all_metrics, metric_categories) }}
+            <a role="button" class="report-details-closer">close</a>
+            </div>
+            {# end report metadata block #}
+        <td>
+            {% if 'delete' in report['actions'] %}
+            <a role="button" class="btn btn-danger btn-sm" href="{{ url_for('data_dashboard.delete_report', uuid=report['report_id']) }}">Delete</a>
+            {% endif %}
+        </td>
+        <td class="reports-table provider-column">{{ report['provider'] }}</td>
+        <td class="reports-table status-column">{{ report['status'] }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<script src='/static/js/report-listing.js'></script>
+{% endblock %}
+

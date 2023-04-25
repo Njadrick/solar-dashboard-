@@ -1,0 +1,94 @@
+from flask import url_for, request, render_template, redirect
+
+from sfa_dash.api_interface import (sites, observations, forecasts,
+                                    cdf_forecast_groups, aggregates)
+from sfa_dash.blueprints.dash import DataDashView
+from sfa_dash.errors import DataRequestException
+
+
+class DeleteConfirmation(DataDashView):
+    def __init__(self, data_type):
+        if data_type == 'forecast':
+            self.api_handle = forecasts
+            self.metadata_template = 'data/metadata/forecast_metadata.html'
+        elif data_type == 'observation':
+            self.api_handle = observations
+            self.metadata_template = 'data/metadata/observation_metadata.html'
+        elif data_type == 'cdf_forecast_group':
+            self.api_handle = cdf_forecast_groups
+            self.metadata_template = 'data/metadata/cdf_forecast_group_metadata.html' # NOQA
+        elif data_type == 'site':
+            self.api_handle = sites
+            self.metadata_template = 'data/metadata/site_metadata.html'
+        elif data_type == 'aggregate':
+            self.api_handle = aggregates
+            self.metadata_template = 'data/metadata/aggregate_metadata.html'
+        else:
+            raise ValueError(f'No Deletetion Form defined for {data_type}.')
+        self.data_type = data_type
+        self.template = 'forms/deletion_form.html'
+
+    def set_template_args(self, **kwargs):
+        self.template_args = {}
+        self.template_args.update({
+            'metadata_block': render_template(self.metadata_template,
+                                              **self.metadata),
+            'uuid': self.metadata['uuid'],
+            'data_type': self.data_type,
+        })
+        if 'errors' in kwargs:
+            self.template_args.update({'errors': kwargs['errors']})
+
+    def get(self, uuid, **kwargs):
+        """Presents a deletion confirmation form that makes a post
+        request to this endpoint on submission
+        """
+        try:
+            self.metadata = self.api_handle.get_metadata(uuid)
+        except DataRequestException as e:
+            return render_template(self.template, uuid=uuid,
+                                   data_type=self.data_type, errors=e.errors)
+        else:
+            try:
+                self.set_site_or_aggregate_metadata()
+            except DataRequestException:
+                pass
+            self.metadata['uuid'] = uuid
+            self.set_site_or_aggregate_link()
+            self.set_template_args(**kwargs)
+        return render_template(self.template, **self.template_args)
+
+    def post(self, uuid):
+        """Carries out the delete request to the API"""
+        confirmation_url = url_for(f'data_dashboard.delete_{self.data_type}',
+                                   _external=True,
+                                   uuid=uuid)
+        if request.headers['Referer'] != confirmation_url:
+            # If the user was directed from anywhere other than
+            # the confirmation page, redirect to confirm.
+            return redirect(confirmation_url)
+        try:
+            self.metadata = self.api_handle.get_metadata(uuid)
+        except DataRequestException:
+            redirect_url = url_for(f'data_dashboard.{self.data_type}s')
+        else:
+            if self.metadata.get('site_id') is not None:
+                if self.data_type == 'site':
+                    redirect_url = url_for('data_dashboard.sites')
+                else:
+                    redirect_url = url_for(f'data_dashboard.{self.data_type}s',
+                                           site_id=self.metadata['site_id'])
+            elif self.metadata.get('aggregate_id') is not None:
+                if self.data_type == 'aggregate':
+                    redirect_url = url_for('data_dashboard.aggregates')
+                else:
+                    redirect_url = url_for(
+                        f'data_dashboard.{self.data_type}s',
+                        aggregate_id=self.metadata['aggregate_id'])
+            else:
+                redirect_url = url_for(f'data_dashboard.{self.data_type}s')
+        try:
+            self.api_handle.delete(uuid)
+        except DataRequestException as e:
+            return self.get(uuid, errors=e.errors)
+        return redirect(redirect_url)

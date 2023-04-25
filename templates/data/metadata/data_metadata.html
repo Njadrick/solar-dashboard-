@@ -1,0 +1,54 @@
+{# Base metadata template for data containers, forecasts, observationsa,
+ cdf_forecasts.
+#}
+{% extends "data/metadata/meta_container.html" %}
+{% import "data/metadata/meta_macro.jinja" as macro %}
+{% block metadata %}
+<ul class="data-metadata-fields col-md-6 col-sm-12">
+      {{ macro.li('Name', name) }}
+      {# select the correct uuid for printing #}
+      {% if site_id is defined %}
+        {% if forecast_id is defined %}
+          {% set uuid = forecast_id %}
+        {% elif observation_id is defined %}
+          {% set uuid = observation_id %}
+        {% else %}
+          {% set uuid = site_id %}
+        {% endif %}
+      {% elif aggregate_id is defined %}
+        {% if forecast_id is defined %}
+          {% set uuid = forecast_id %}
+        {% else %}
+          {% set uuid = aggregate_id %}
+        {% endif %}
+      {% endif %}
+      {{ macro.uuid(uuid) }}
+
+      {% if site_link is defined %}
+        {{ macro.li('Site', site_link )}}
+      {% elif location_link is defined %}
+        {% if site_id is not none %}
+        {% set location_label = 'Site' %}
+        {% else %}
+        {% set location_label = 'Aggregate' %}
+        {% endif %}
+        {{ macro.li(location_label, location_link) }}
+      {% endif %}
+
+</ul>
+<ul class="data-metadata-fields col-md-6 col-sm-12">
+  {{ macro.li('Variable', variable |convert_varname, variable | var_to_units) }}
+  {{ macro.li('Value type', interval_value_type) }}
+  {{ macro.li('Interval label', interval_label) }}
+  {{ macro.li('Interval length', interval_length | display_timedelta) }}
+  {% block extra_fields %}
+  {% endblock %}
+  {% if timerange_start is defined and timerange_start is not none %}
+    {{ macro.li('Start', timerange_start | format_datetime) }}
+  {% endif %}
+  {% if timerange_end is defined and timerange_end is not none %}
+    {{ macro.li('End', timerange_end | format_datetime) }}
+  {% endif %}
+</ul>
+{% include "data/metadata/extra_parameters.html" %}
+{% endblock %}

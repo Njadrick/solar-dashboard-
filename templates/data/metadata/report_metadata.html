@@ -1,0 +1,5 @@
+{% extends "data/metadata/meta_container.html" %}
+{% import "data/metadata/report_macro.jinja" as macro %}
+{% block metadata %}
+{{ macro.report_metadata(metadata, all_metrics, metric_categories, object_pairs) }}
+{% endblock %}

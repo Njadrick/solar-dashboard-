@@ -1,0 +1,6 @@
+{% extends "data/metadata/forecast_metadata.html" %}
+{% import "data/metadata/meta_macro.jinja" as macro %}
+{% set data_type = 'Probabilistic Forecast' %}
+{% block cdf_fields %}
+  {{ macro.li('Axis', axis) }}
+{% endblock %}
